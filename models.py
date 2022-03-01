@@ -100,6 +100,33 @@ class Bullet(pygame.sprite.Sprite):
         self.destroy()
 
 
+# Class that handles enemy bullets
+class EnemyBullet(pygame.sprite.Sprite):
+    def __init__(self, pos, speed, screen_height):
+        super().__init__()
+        # Loads the bullet image file
+        self.image = pygame.image.load("enemyBullet.png").convert_alpha()
+
+        # Gives the bullet a rectangle collider
+        self.rect = self.image.get_rect(center=pos)
+
+        # Sets the speed of the bullet
+        self.speed = speed
+
+        # Sets the height of the screen
+        self.height_y_constraint = screen_height
+
+    # Deletes the bullet when it leaves the screen
+    def destroy(self):
+        pass
+        if self.rect.y <= -50 or self.rect.y >= self.height_y_constraint + 500:
+            self.kill()
+
+    def update(self):
+        self.rect.y += self.speed
+        self.destroy()
+
+
 # Class that handles the enemies
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, speed, constraint):
@@ -111,7 +138,17 @@ class Enemy(pygame.sprite.Sprite):
         # How fast the enemy will move
         self.speed = speed
 
-        #self.rect = self.image.get_rect(midtop=(x, y))
+        # Helps to create a new bullet sprite on each key press
+        self.bullets = pygame.sprite.Group()
+
+        # Sets the time when a bullet is shot
+        self.shoot_time = 0
+
+        # To check if bullet is ready to shoot
+        self.ready = True
+
+        # Timer to prevent infinite shooting
+        self.cooldown = 600
 
     # Stops the enemy from leaving the screen
     def constraint(self):
@@ -120,21 +157,37 @@ class Enemy(pygame.sprite.Sprite):
         if self.rect.right >= self.max_x_constraint:
             self.rect.right = self.max_x_constraint
 
-    # Moves the enemies
-    '''def move(self):
-        turn_around = False
-        if self.rect.right != self.max_x_constraint & turn_around == False:
-            self.rect.x += self.speed
-            if self.rect.right == self.max_x_constraint:
-                turn_around = True
+    # Method that handles shooting bullets by the enemy
+    '''def shoot(self):
+        # Shoot bullet only when cooldown is 0
+        if self.ready:
+            self.bullets.add(EnemyBullet(self.rect.center, 8, self.rect.bottom))
+            # Triggers the bullet cooldown
+            self.ready = False
+            self.shoot_time = pygame.time.get_ticks()
 
-        elif self.rect.left != 0 & turn_around == True:
-            self.rect.x -= self.speed '''
+    # Handles the bullet recharge time
+    def recharge(self):
+        if not self.ready:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.shoot_time >= self.cooldown:
+                self.ready = True'''
+
+    # Moves the enemies
+    def move(self):
+        if self.rect.right >= 800:
+            self.speed = -self.speed
+        elif self.rect.left <= 0:
+            self.speed = -self.speed
 
     # Updates the enemy as the game is running
-    def update(self, direction):
+    def update(self):
         self.constraint()
-        self.rect.x += direction
+        self.move()
+        self.rect.x += self.speed
+        #self.shoot()
+        #self.recharge()
+        self.bullets.update()
 
 
 # Subclass that handles the easy enemies (green)
