@@ -15,20 +15,38 @@ class Game:
 
         # Set up the enemies
         self.enemies = pygame.sprite.Group()
-        self.enemy_setup()
-        self.enemy_direction = 3
         self.enemy_bullets = pygame.sprite.Group()
+        self.score_value = 0
+        self.spawn = True
+        self.spawn_delay = 1800
+        self.spawn_time = 0
 
     # Sets up the enemies
-    def enemy_setup(self):
+    def enemy_spawn(self):
         difficulty = 0
+        if counter <= 15 and self.spawn is True:
+            easy_enemy_sprite = EasyEnemy(random.randint(10, screen_width - 10), screen_height - 440, 3, screen_width)
+            self.enemies.add(easy_enemy_sprite)
+            self.spawn_time = pygame.time.get_ticks()
+            self.spawn = False
+        elif 45 >= counter > 15 and self.spawn is True:
+            medium_enemy_sprite = MediumEnemy(random.randint(10, screen_width - 10), screen_height - 500, 4, screen_width)
+            self.enemies.add(medium_enemy_sprite)
+            self.spawn_time = pygame.time.get_ticks()
+            self.spawn = False
+            self.spawn_delay = 1400
+        elif counter > 45 and self.spawn is True:
+            hard_enemy_sprite = HardEnemy(random.randint(10, screen_width - 10), screen_height - 560, 5, screen_width)
+            self.enemies.add(hard_enemy_sprite)
+            self.spawn_time = pygame.time.get_ticks()
+            self.spawn = False
+            self.spawn_delay = 1200
 
-        easy_enemy_sprite = EasyEnemy(random.randint(10, screen_width - 10), screen_height - 440, 3, screen_width)
-        self.enemies.add(easy_enemy_sprite)
-        medium_enemy_sprite = MediumEnemy(random.randint(10, screen_width - 10), screen_height - 500, 4, screen_width)
-        self.enemies.add(medium_enemy_sprite)
-        hard_enemy_sprite = HardEnemy(random.randint(10, screen_width - 10), screen_height - 560, 5, screen_width)
-        self.enemies.add(hard_enemy_sprite)
+    def respawn_timer(self):
+        if not self.spawn:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.spawn_time >= self.spawn_delay:
+                self.spawn = True
 
     # Checks if the bullet collides with an enemy or player
     def collision_checks(self):
@@ -38,6 +56,8 @@ class Game:
                 # After a collision with an enemy, delete the bullet
                 if pygame.sprite.spritecollide(bullet, self.enemies, True):
                     bullet.kill()
+                    self.score_value += 1
+
         # Check for enemy bullets
         if self.enemy_bullets:
             for bullet in self.enemy_bullets:
@@ -53,6 +73,11 @@ class Game:
             enemy_bullet_sprite = EnemyBullet(random_enemy.rect.center, 6, screen_height)
             self.enemy_bullets.add(enemy_bullet_sprite)
 
+    # Display the score
+    def show_score(self):
+        score = font.render("Score: " + str(self.score_value), True, (255, 255, 255))
+        screen.blit(score, (0, 0))
+
     # Method that runs the game
     def run(self):
         self.player.sprite.bullets.draw(screen)
@@ -64,6 +89,9 @@ class Game:
         self.enemy_bullets.draw(screen)
         self.collision_checks()
         self.enemies.update()
+        self.show_score()
+        self.enemy_spawn()
+        self.respawn_timer()
 
 
 if __name__ == '__main__':
@@ -82,12 +110,14 @@ if __name__ == '__main__':
     TIMER_EVENT = pygame.USEREVENT + 1
     pygame.time.set_timer(TIMER_EVENT, time_delay)
 
-    # Font for timer
-    font = pygame.font.SysFont(None, 32)
-    text = font.render(str(counter), True, (255, 255, 255))
-
+    # Create the game class
     game = Game()
 
+    # Font for timer
+    font = pygame.font.Font('Eight-Bit Madness.ttf', 64)
+    timer_text = font.render(str(counter), True, (255, 255, 255))
+
+    # Event for enemy shooting
     ENEMY_BULLET = pygame.USEREVENT + 1
     pygame.time.set_timer(ENEMY_BULLET, 800)
 
@@ -108,12 +138,12 @@ if __name__ == '__main__':
                 game.enemy_shoot()
             if event.type == TIMER_EVENT:
                 counter += 1
-                text = font.render(str(counter), True, (255, 255, 255))
+                timer_text = font.render(str(counter), True, (255, 255, 255))
 
         # RGB = Red, Green, Blue
         screen.fill((0, 0, 0))
-        text_rect = text.get_rect(midtop=screen.get_rect().midtop)
-        screen.blit(text, text_rect)
+        timer_text_rect = timer_text.get_rect(midtop=screen.get_rect().midtop)
+        screen.blit(timer_text, timer_text_rect)
         game.run()
 
         pygame.display.flip()
