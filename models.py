@@ -30,6 +30,10 @@ class Player(pygame.sprite.Sprite):
         # Helps to create a new bullet sprite on each key press
         self.bullets = pygame.sprite.Group()
 
+        # Declare the shoot sound effect
+        self.shoot_sound = pygame.mixer.Sound("shoot.wav")
+        self.shoot_sound.set_volume(0.2)
+
     # Gets player input
     def get_input(self):
         # Detect if a key is pressed
@@ -65,6 +69,7 @@ class Player(pygame.sprite.Sprite):
     # Method that handles shooting bullets by the player
     def shoot(self):
         self.bullets.add(Bullet(self.rect.center, -8, self.rect.bottom))
+        pygame.mixer.Sound.play(self.shoot_sound)
 
     # Updates the game as it is running
     def update(self):

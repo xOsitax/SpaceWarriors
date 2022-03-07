@@ -20,26 +20,55 @@ class Game:
         self.spawn = True
         self.spawn_delay = 1800
         self.spawn_time = 0
+        self.enemy_max = 0
+
+        # Set up the player health
+        self.health = 3
+        self.health_surface = pygame.image.load("heart.png").convert_alpha()
+        self.health_x_start_pos = screen_width - (self.health_surface.get_size()[0] * 3 + 620)
+
+        # Set up the three rows
+        self.toprow = screen_height - 560
+        self.midrow = screen_height - 500
+        self.botrow = screen_height - 440
+
+        # Declare the explosion sound effect
+        self.explode_sound = pygame.mixer.Sound("explosion.wav")
+        self.explode_sound.set_volume(0.3)
 
     # Sets up the enemies
     def enemy_spawn(self):
-        difficulty = 0
-        if counter <= 15 and self.spawn is True:
-            easy_enemy_sprite = EasyEnemy(random.randint(10, screen_width - 10), screen_height - 440, 3, screen_width)
+        # The first level of difficulty: spawns in only easy enemies
+        if counter <= 15 and self.spawn is True and self.enemy_max < 20:
+            easy_enemy_sprite = EasyEnemy(random.randint(10, screen_width - 10),
+                                          random.choice([self.toprow, self.midrow, self.botrow]), 3, screen_width)
             self.enemies.add(easy_enemy_sprite)
             self.spawn_time = pygame.time.get_ticks()
             self.spawn = False
-        elif 45 >= counter > 15 and self.spawn is True:
-            medium_enemy_sprite = MediumEnemy(random.randint(10, screen_width - 10), screen_height - 500, 4, screen_width)
-            self.enemies.add(medium_enemy_sprite)
+            self.enemy_max += 1
+        # The second level of difficulty: spawns in easy and medium enemies at a slightly faster pace
+        elif 45 >= counter > 15 and self.spawn is True and self.enemy_max < 20:
+            easy_enemy_sprite = EasyEnemy(random.randint(10, screen_width - 10),
+                                          random.choice([self.toprow, self.midrow, self.botrow]), 3, screen_width)
+            medium_enemy_sprite = MediumEnemy(random.randint(10, screen_width - 10),
+                                              random.choice([self.toprow, self.midrow, self.botrow]), 4, screen_width)
+            self.enemies.add(random.choice([medium_enemy_sprite, easy_enemy_sprite]))
             self.spawn_time = pygame.time.get_ticks()
             self.spawn = False
+            self.enemy_max += 1
             self.spawn_delay = 1400
-        elif counter > 45 and self.spawn is True:
-            hard_enemy_sprite = HardEnemy(random.randint(10, screen_width - 10), screen_height - 560, 5, screen_width)
-            self.enemies.add(hard_enemy_sprite)
+        # The final lever of difficulty: spawns in easy, medium, and hard enemies at a rapid pace
+        elif counter > 45 and self.spawn is True and self.enemy_max < 20:
+            easy_enemy_sprite = EasyEnemy(random.randint(10, screen_width - 10),
+                                          random.choice([self.toprow, self.midrow, self.botrow]), 3, screen_width)
+            medium_enemy_sprite = MediumEnemy(random.randint(10, screen_width - 10),
+                                              random.choice([self.toprow, self.midrow, self.botrow]), 4, screen_width)
+            hard_enemy_sprite = HardEnemy(random.randint(10, screen_width - 10),
+                                          random.choice([self.toprow, self.midrow, self.botrow]), 5, screen_width)
+            self.enemies.add(random.choice([hard_enemy_sprite, medium_enemy_sprite, easy_enemy_sprite]))
             self.spawn_time = pygame.time.get_ticks()
             self.spawn = False
+            self.enemy_max += 1
             self.spawn_delay = 1200
 
     def respawn_timer(self):
@@ -56,7 +85,9 @@ class Game:
                 # After a collision with an enemy, delete the bullet
                 if pygame.sprite.spritecollide(bullet, self.enemies, True):
                     bullet.kill()
-                    self.score_value += 1
+                    self.score_value += 10
+                    self.enemy_max -= 1
+                    pygame.mixer.Sound.play(self.explode_sound)
 
         # Check for enemy bullets
         if self.enemy_bullets:
@@ -64,7 +95,10 @@ class Game:
                 # After a collision with the player, delete the bullet and register hit
                 if pygame.sprite.spritecollide(bullet, self.player, False):
                     bullet.kill()
-                    print('hit')
+                    self.health -= 1
+                    if self.health <= 0:
+                        pygame.quit()
+                        sys.exit()
 
     # Enemy shoot
     def enemy_shoot(self):
@@ -78,6 +112,12 @@ class Game:
         score = font.render("Score: " + str(self.score_value), True, (255, 255, 255))
         screen.blit(score, (0, 0))
 
+    # Display player health
+    def show_health(self):
+        for heart in range(self.health):
+            x = self.health_x_start_pos + (heart * self.health_surface.get_size()[0] + 10)
+            screen.blit(self.health_surface, (x, screen_height - 60))
+
     # Method that runs the game
     def run(self):
         self.player.sprite.bullets.draw(screen)
@@ -90,6 +130,7 @@ class Game:
         self.collision_checks()
         self.enemies.update()
         self.show_score()
+        self.show_health()
         self.enemy_spawn()
         self.respawn_timer()
 
@@ -101,7 +142,7 @@ if __name__ == '__main__':
     # create the screen
     screen_width = 800
     screen_height = 600
-    screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
+    screen = pygame.display.set_mode((screen_width, screen_height))
 
     # Create the variables for the game clock/timer
     clock = pygame.time.Clock()
@@ -119,7 +160,11 @@ if __name__ == '__main__':
 
     # Event for enemy shooting
     ENEMY_BULLET = pygame.USEREVENT + 1
-    pygame.time.set_timer(ENEMY_BULLET, 800)
+    pygame.time.set_timer(ENEMY_BULLET, 750)
+
+    # Play the music
+    #pygame.mixer.music.load("Battle Theme.wav")
+    #pygame.mixer.music.play(-1)
 
     # Caption and Icon
     pygame.display.set_caption("Space Warriors")
