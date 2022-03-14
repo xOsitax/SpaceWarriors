@@ -25,6 +25,7 @@ class Game:
         self.credits = CreditsMenu(self)
         self.screen = pygame.display.set_mode((self.DISPLAY_W, self.DISPLAY_H))
         self.curr_menu = self.main_menu
+        self.counter = 0
 
         # Set up the player
         player_sprite = Player((self.DISPLAY_W / 2, self.DISPLAY_H - 50), self.DISPLAY_W, 5)
@@ -126,11 +127,11 @@ class Game:
             self.enemy_bullet_sprite = pygame.USEREVENT + 1
             pygame.time.set_timer(self.enemy_bullet_sprite, 750)
 
-
-
     # Display the score
     def show_score(self):
-        score = pygame.font.render("Score: " + str(self.score_value), True, (255, 255, 255))
+        pygame.font.init()
+        font = pygame.font.SysFont("Grobold", 20)
+        score = font.render("Score: " + str(self.score_value), True, (255, 255, 255))
         self.screen.blit(score, (0, 0))
 
     # Display player health
@@ -141,7 +142,6 @@ class Game:
 
     def timer(self):
         self.clock = pygame.time.Clock()
-        self.counter = 0
         time_delay = 1000
         TIMER_EVENT = pygame.USEREVENT + 1
         pygame.time.set_timer(TIMER_EVENT, time_delay)
@@ -179,15 +179,9 @@ class Game:
         self.timer()
 
     def game_loop(self):
-        self.check_events()
-
         while self.playing:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == EnemyBullet:
-                    self.enemy_shoot()
+            self.check_events()
+            self.run()
 
     def draw_text(self, text, size, x, y):
         font = pygame.font.Font(self.font_name, size)
