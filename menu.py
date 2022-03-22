@@ -6,7 +6,7 @@ class Menu():
         self.mid_w, self.mid_h = self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2
         self.run_display = True
         self.cursor_rect = pygame.Rect(0, 0, 20, 20)
-        self.offset = - 100
+        self.offset = - 75
 
     def draw_cursor(self):
         self.game.draw_text('*', 15, self.cursor_rect.x, self.cursor_rect.y)
@@ -21,9 +21,10 @@ class MainMenu(Menu):
         Menu.__init__(self, game)
         self.state = "Singleplayer"
         self.singleplayerx, self.singleplayery = self.mid_w, self.mid_h + 30
-        self.leaderboardx, self.leaderboardy = self.mid_w, self.mid_h + 55
-        self.optionsx, self.optionsy = self.mid_w, self.mid_h + 80
-        self.creditsx, self.creditsy = self.mid_w, self.mid_h + 105
+        self.multiplayerx, self.multiplayery = self.mid_w, self.mid_h + 55
+        self.leaderboardx, self.leaderboardy = self.mid_w, self.mid_h + 80
+        self.optionsx, self.optionsy = self.mid_w, self.mid_h + 105
+        self.creditsx, self.creditsy = self.mid_w, self.mid_h + 130
 
         self.cursor_rect.midtop = (self.singleplayerx + self.offset, self.singleplayery)
 
@@ -33,8 +34,9 @@ class MainMenu(Menu):
             self.game.check_events()
             self.check_input()
             self.game.display.fill(self.game.BLACK)
-            self.game.draw_text('Space Invaders', 50, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 40)
+            self.game.draw_text('Space Warriors', 50, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 40)
             self.game.draw_text("Singleplayer", 20, self.singleplayerx, self.singleplayery)
+            self.game.draw_text("Multiplayer", 20, self.multiplayerx, self.multiplayery)
             self.game.draw_text("Leaderboards", 20, self.leaderboardx, self.leaderboardy)
             self.game.draw_text("Options", 20, self.optionsx, self.optionsy)
             self.game.draw_text("Credits", 20, self.creditsx, self.creditsy)
@@ -46,6 +48,9 @@ class MainMenu(Menu):
     def move_cursor(self):
         if self.game.DOWN_KEY:
             if self.state == 'Singleplayer':
+                self.cursor_rect.midtop = (self.multiplayerx + self.offset, self.multiplayery)
+                self.state = 'Multiplayer'
+            elif self.state == 'Multiplayer':
                 self.cursor_rect.midtop = (self.leaderboardx + self.offset, self.leaderboardy)
                 self.state = 'Leaderboards'
             elif self.state == 'Leaderboards':
@@ -61,9 +66,12 @@ class MainMenu(Menu):
             if self.state == 'Singleplayer':
                 self.cursor_rect.midtop = (self.creditsx + self.offset, self.creditsy)
                 self.state = 'Credits'
-            elif self.state == 'Leaderboards':
+            elif self.state == 'Multiplayer':
                 self.cursor_rect.midtop = (self.singleplayerx + self.offset, self.singleplayery)
                 self.state = 'Singleplayer'
+            elif self.state == 'Leaderboards':
+                self.cursor_rect.midtop = (self.multiplayerx + self.offset, self.multiplayery)
+                self.state = 'Multiplayer'
             elif self.state == 'Options':
                 self.cursor_rect.midtop = (self.leaderboardx + self.offset, self.leaderboardy)
                 self.state = 'Leaderboards'
@@ -76,6 +84,8 @@ class MainMenu(Menu):
         if self.game.START_KEY:
             if self.state == 'Singleplayer':
                 self.game.playing = True
+            elif self.state == 'Multiplayer':
+                self.game.curr_menu = self.game.multiplayer
             elif self.state == 'Leaderboards':
                 self.game.curr_menu = self.game.leaderboard
             elif self.state == 'Options':
@@ -119,6 +129,41 @@ class OptionsMenu(Menu):
             # TO-DO: Create a Volume Menu and a Controls Menu
             pass
 
+class Multiplayer(Menu):
+    def __init__(self, game):
+        Menu.__init__(self, game)
+        self.state = 'Player Selection'
+        self.p1x, self.p1y = self.mid_w-200 , self.mid_h + 20
+        self.p2x, self.p2y = self.mid_w+200, self.mid_h + 20
+        self.cursor_rect.midtop = (self.p1x + self.offset, self.p1y)
+
+    def display_menu(self):
+        self.run_display = True
+        while self.run_display:
+            self.game.check_events()
+            self.check_input()
+            self.game.display.fill((0, 0, 0))
+            self.game.draw_text('Ready?', 20, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 30)
+            self.game.draw_text("Player 1", 15, self.p1x, self.p1y)
+            self.game.draw_text("Player 2", 15, self.p2x, self.p2y)
+            self.blit_screen()
+
+    def check_input(self):
+        if self.game.BACK_KEY:
+            self.game.curr_menu = self.game.main_menu
+            self.run_display = False
+        elif self.game.UP_KEY or self.game.DOWN_KEY:
+            if self.state == 'Player 1':
+                self.state = 'Unready'
+                self.cursor_rect.midtop = (self.p1x + self.offset, self.p1y)
+            elif self.state == 'Player 2':
+                self.state = 'Unready'
+                self.cursor_rect.midtop = (self.p2x + self.offset, self.p2y)
+        elif self.game.START_KEY:
+            self.state = 'Ready'
+            # Start the multiplayer game
+            pass
+
 class CreditsMenu(Menu):
     def __init__(self, game):
         Menu.__init__(self, game)
@@ -132,7 +177,7 @@ class CreditsMenu(Menu):
                 self.run_display = False
             self.game.display.fill(self.game.BLACK)
             self.game.draw_text('Credits', 20, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 20)
-            self.game.draw_text('Made by Phil,Luis,Rutva,and Yessenia', 15, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 + 10)
+            self.game.draw_text('Made by Phil,  Luis,  Rutva,  and Yessenia', 15, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 + 10)
             self.blit_screen()
 
 class Leaderboard(Menu):
@@ -149,4 +194,5 @@ class Leaderboard(Menu):
             self.game.display.fill(self.game.BLACK)
             self.game.draw_text('Leaderboard', 20, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 20)
             self.game.draw_text('Top Scores:', 15, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 + 10)
+            self.game.draw_text(str(self.game.initial) + "........." + str(self.game.hs), 22, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 + 45)
             self.blit_screen()

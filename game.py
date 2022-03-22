@@ -1,31 +1,42 @@
 import pygame
+from os import path
 import sys
 from random import choice
 import random
 from menu import *
 from models import Player, EasyEnemy, MediumEnemy, HardEnemy, EnemyBullet
+pygame.init()
 pygame.font.init()
+pygame.mixer.init()
+
 
 class Game:
     # Initialize the game
     def __init__(self):
 
-        #start up the game environment and menu
+        #start up the menu
 
         self.running, self.playing = True, False
         self.UP_KEY, self.DOWN_KEY, self.START_KEY, self.BACK_KEY = False, False, False, False
-        self.DISPLAY_W, self.DISPLAY_H = 800, 600
+        self.DISPLAY_W, self.DISPLAY_H = 960, 540
         self.display = pygame.Surface((self.DISPLAY_W,self.DISPLAY_H))
         self.window = pygame.display.set_mode((self.DISPLAY_W, self.DISPLAY_H))
-        self.font_name= pygame.font.get_default_font()
+        self.font_name = pygame.font.Font("8bit.ttf", 20)
         self.BLACK, self.WHITE = (0,0,0), (255,255,255)
+        self.background = pygame.image.load('bg.jpg')
         self.main_menu = MainMenu(self)
+        self.multiplayer = Multiplayer(self)
         self.leaderboard = Leaderboard(self)
         self.options = OptionsMenu(self)
         self.credits = CreditsMenu(self)
         self.screen = pygame.display.set_mode((self.DISPLAY_W, self.DISPLAY_H))
         self.curr_menu = self.main_menu
         self.counter = 0
+        self.hs = 80
+        self.initial = "LS"
+        self.HS = "highscore.txt"
+        self.load_scores()
+
 
         # Set up the player
         player_sprite = Player((self.DISPLAY_W / 2, self.DISPLAY_H - 50), self.DISPLAY_W, 5)
@@ -127,6 +138,18 @@ class Game:
             self.enemy_bullet_sprite = pygame.USEREVENT + 1
             pygame.time.set_timer(self.enemy_bullet_sprite, 750)
 
+    # load the highscores
+    def load_scores(self):
+        self.dir = path.dirname(__file__)
+        try:
+            # try to read the file
+            with open(path.join(self.dir, self.HS), 'r+') as f:
+                self.highscore = int(f.read())
+        except:
+            # create the file
+            with open(path.join(self.dir, self.HS), 'w'):
+                self.highscore = 0
+
     # Display the score
     def show_score(self):
         pygame.font.init()
@@ -184,7 +207,7 @@ class Game:
             self.run()
 
     def draw_text(self, text, size, x, y):
-        font = pygame.font.Font(self.font_name, size)
+        font = pygame.font.Font("8bit.ttf", 25)
         text_surface = font.render(text, True, self.WHITE)
         text_rect = text_surface.get_rect()
         text_rect.center = (x, y)
