@@ -96,8 +96,6 @@ class Game:
                 if pygame.sprite.spritecollide(bullet, self.player, False):
                     bullet.kill()
                     self.health -= 1
-                    #if self.health <= 0:
-    # game_over = True
 
     # Enemy shoot
     def enemy_shoot(self):
@@ -131,7 +129,6 @@ class Game:
                 if event.type == pygame.K_SPACE:
                     waiting = False
 
-
     # Method that runs the game
     def run(self):
         self.player.sprite.bullets.draw(screen)
@@ -149,7 +146,7 @@ class Game:
 
 
 if __name__ == '__main__':
-    # Initialize the pygame
+    # Initialize pygame
     pygame.init()
 
     # create the screen
@@ -164,9 +161,11 @@ if __name__ == '__main__':
     TIMER_EVENT = pygame.USEREVENT + 1
     pygame.time.set_timer(TIMER_EVENT, time_delay)
 
-    # Game Loop
+    # Create key input variable
+    keys = pygame.key.get_pressed()
+
+    # Make sure the game will run
     running = True
-    game_over = False
 
     # Create game object
     game = Game()
@@ -174,39 +173,75 @@ if __name__ == '__main__':
     # Font for timer
     font = pygame.font.Font('Eight-Bit Madness.ttf', 64)
     timer_text = font.render(str(counter), True, (255, 255, 255))
+    menu_text = font.render("Press space to start", True, (255, 255, 255))
+
+
 
     # Event for enemy shooting
     ENEMY_BULLET = pygame.USEREVENT + 1
     pygame.time.set_timer(ENEMY_BULLET, 750)
 
     # Play the music
-    pygame.mixer.music.load("Battle Theme.wav")
-    pygame.mixer.music.play(-1)
+    #pygame.mixer.music.load("Battle Theme.wav")
+    #pygame.mixer.music.play(-1)
 
     # Caption and Icon
     pygame.display.set_caption("Space Warriors")
     icon = pygame.image.load('logo.png')
     pygame.display.set_icon(icon)
 
+    # Initial state for the game
+    state = 'menu'
+
+    # Game Loop
     while running:
-        if game_over:
-            game.show_game_over()
-            running = False
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == ENEMY_BULLET:
-                game.enemy_shoot()
-            if event.type == TIMER_EVENT:
-                counter += 1
-                timer_text = font.render(str(counter), True, (255, 255, 255))
 
-        # RGB = Red, Green, Blue
-        screen.fill((0, 0, 0))
-        timer_text_rect = timer_text.get_rect(midtop=screen.get_rect().midtop)
-        screen.blit(timer_text, timer_text_rect)
-        game.run()
+        # Menu state
+        if state == 'menu':
+            # Show some text
+            menu_text_rect = menu_text.get_rect(center=screen.get_rect().center)
+            screen.blit(menu_text, menu_text_rect)
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                # Check for player input to start the game
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        state = 'singlePlayer'
 
-        pygame.display.flip()
-        clock.tick(60)
+        if state == 'gameOver':
+            # Show game over
+            game_over_text = font.render("Game Over! Score: " + str(game.score_value), True, (255, 255, 255))
+            game_over_text_rect = game_over_text.get_rect(center=screen.get_rect().center)
+            screen.blit(game_over_text, game_over_text_rect)
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+        if state == 'singlePlayer':
+            # RGB = Red, Green, Blue
+            screen.fill((0, 0, 0))
+            timer_text_rect = timer_text.get_rect(midtop=screen.get_rect().midtop)
+            screen.blit(timer_text, timer_text_rect)
+            game.run()
+            if game.health <= 0:
+                state = 'gameOver'
+
+            pygame.display.flip()
+            clock.tick(60)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == ENEMY_BULLET:
+                    game.enemy_shoot()
+                if event.type == TIMER_EVENT:
+                    counter += 1
+                    timer_text = font.render(str(counter), True, (255, 255, 255))
+
+
