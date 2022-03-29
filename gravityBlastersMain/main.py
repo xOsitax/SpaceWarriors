@@ -13,6 +13,8 @@ class Game:
         # Set up the player
         self.player_sprite = Player((screen_width / 2, screen_height - 50), screen_width, 5)
         self.player = pygame.sprite.GroupSingle(self.player_sprite)
+        self.initial = ''
+        self.hs = 0
 
         # Set up the enemies
         self.enemies = pygame.sprite.Group()
@@ -191,6 +193,7 @@ class MainMenu(Menu):
         self.leaderboardy = self.mid_h + 80
         self.optionsy = self.mid_h + 105
         self.creditsy = self.mid_h + 130
+        self.quity = self.mid_h + 155
 
         self.cursor_rect.midtop = (self.singleplayery, self.cursor_x)
 
@@ -202,8 +205,34 @@ class MainMenu(Menu):
         draw_text("Leaderboards", 20, self.leaderboardy)
         draw_text("Options", 20, self.optionsy)
         draw_text("Credits", 20, self.creditsy)
+        draw_text("Quit", 20, self.quity)
 
         self.draw_cursor()
+        blit_screen()
+
+
+class Leaderboard(Menu):
+    def __init__(self):
+        Menu.__init__(self)
+
+    def display_menu(self):
+        screen.fill(BLACK)
+        draw_text('Leaderboard', 20, screen_height / 2 - 20)
+        draw_text('Top Scores:', 15, screen_height / 2 + 10)
+        draw_text(str(game.initial) + "........." + str(game.hs), 22,
+                  screen_height / 2 + 45)
+        blit_screen()
+
+
+class CreditsMenu(Menu):
+    def __init__(self):
+        Menu.__init__(self)
+
+    def display_menu(self):
+        screen.fill(BLACK)
+        draw_text('Credits', 20, screen_height / 2 - 20)
+        draw_text('Made by Phil,  Luis,  Rutva,  and Yessenia', 15,
+                  screen_height / 2 + 10)
         blit_screen()
 
 
@@ -260,6 +289,8 @@ if __name__ == '__main__':
     game = Game()
     bg = Background()
     main_menu = MainMenu()
+    leaderboard = Leaderboard()
+    credits_menu = CreditsMenu()
 
     # Font for timer
     font = pygame.font.Font('assets/Eight-Bit Madness.ttf', 64)
@@ -313,12 +344,16 @@ if __name__ == '__main__':
                             main_menu.state = 'Credits'
                         elif main_menu.state == 'Credits':
                             main_menu.cursor_rect.midtop = (
+                                main_menu.quity, main_menu.cursor_x)
+                            main_menu.state = 'Quit'
+                        elif main_menu.state == 'Quit':
+                            main_menu.cursor_rect.midtop = (
                                 main_menu.singleplayery, main_menu.cursor_x)
                             main_menu.state = 'Singleplayer'
                     elif event.key == pygame.K_UP:
                         if main_menu.state == 'Singleplayer':
-                            main_menu.cursor_rect.midtop = (main_menu.creditsy, main_menu.cursor_x)
-                            main_menu.state = 'Credits'
+                            main_menu.cursor_rect.midtop = (main_menu.quity, main_menu.cursor_x)
+                            main_menu.state = 'Quit'
                         elif main_menu.state == 'Multiplayer':
                             main_menu.cursor_rect.midtop = (
                                 main_menu.singleplayery, main_menu.cursor_x)
@@ -334,6 +369,9 @@ if __name__ == '__main__':
                         elif main_menu.state == 'Credits':
                             main_menu.cursor_rect.midtop = (main_menu.optionsy, main_menu.cursor_x)
                             main_menu.state = 'Options'
+                        elif main_menu.state == 'Quit':
+                            main_menu.cursor_rect.midtop = (main_menu.creditsy, main_menu.cursor_x)
+                            main_menu.state = 'Credits'
                     elif event.key == pygame.K_SPACE:
                         if main_menu.state == 'Singleplayer':
                             state = 'readySingle'
@@ -346,6 +384,35 @@ if __name__ == '__main__':
                             state = 'options'
                         elif main_menu.state == 'Credits':
                             state = 'credits'
+                        elif main_menu.state == 'Quit':
+                            pygame.quit()
+                            sys.exit()
+
+        if state == 'leaderboard':
+            leaderboard.display_menu()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                # Check for player input at the leaderboard
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        state = 'menu'
+                    if event.key == pygame.K_SPACE:
+                        state = 'menu'
+
+        if state == 'credits':
+            credits_menu.display_menu()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                # Check for player input at the leaderboard
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        state = 'menu'
+                    if event.key == pygame.K_SPACE:
+                        state = 'menu'
 
         if state == 'readySingle':
             screen.fill(BLACK)
