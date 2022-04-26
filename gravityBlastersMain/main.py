@@ -9,8 +9,43 @@ from models import Player, EasyEnemy, MediumEnemy, HardEnemy, EnemyBullet, Aster
 pygame.mixer.init()
 
 # Declare the sound effects
-explode_sound = pygame.mixer.Sound("assets/explosion.wav")
-hit_sound = pygame.mixer.Sound("assets/hit.mp3")
+explode_sound = pygame.mixer.Sound("assets/sounds/sfx_explosion.wav")
+hit_sound = pygame.mixer.Sound("assets/sounds/sfx_hit.mp3")
+crack_sound = pygame.mixer.Sound("assets/sounds/sfx_crack.wav")
+break_sound = pygame.mixer.Sound("assets/sounds/sfx_break.wav")
+menu_move_up = pygame.mixer.Sound("assets/sounds/sfx_menu_move1.wav")
+menu_move_down = pygame.mixer.Sound("assets/sounds/sfx_menu_move2.wav")
+menu_select = pygame.mixer.Sound("assets/sounds/sfx_menu_select2.wav")
+pause_sound = pygame.mixer.Sound("assets/sounds/sfx_sounds_pause3_in.wav")
+unpause_sound = pygame.mixer.Sound("assets/sounds/sfx_sounds_pause3_out.wav")
+death_sound = pygame.mixer.Sound("assets/sounds/sfx_exp_double3.wav")
+count_sound = pygame.mixer.Sound("assets/sounds/sfx_count.wav")
+go_sound = pygame.mixer.Sound("assets/sounds/sfx_go.wav")
+ready_sound = pygame.mixer.Sound("assets/sounds/sfx_ready.wav")
+
+
+# Sets the volume for the sounds effects
+def volume_sfx(level=0.2):
+    explode_sound.set_volume(level)
+    hit_sound.set_volume(level)
+    crack_sound.set_volume(level)
+    break_sound.set_volume(level)
+    menu_select.set_volume(level)
+    menu_move_down.set_volume(level)
+    menu_move_up.set_volume(level)
+    pause_sound.set_volume(level)
+    unpause_sound.set_volume(level)
+    death_sound.set_volume(level)
+    count_sound.set_volume(level)
+    go_sound.set_volume(level)
+    ready_sound.set_volume(level)
+    game.player_sprite.shoot_sound.set_volume(level)
+    multi.player_1_sprite.shoot_sound.set_volume(level)
+    multi.player_2_sprite.shoot_sound.set_volume(level)
+
+
+# Sets the volume for the music
+volume_music = 0.2
 
 
 # Class that handles singleplayer gameplay
@@ -19,7 +54,7 @@ class Game:
     def __init__(self):
 
         # Set up the player
-        self.player_sprite = Player("assets/player.png", (screen_width / 2, screen_height - 50), screen_width,
+        self.player_sprite = Player("assets/player.png", (screen_width / 2, screen_height - 60), screen_width,
                                     screen_height, 5)
         self.player = pygame.sprite.GroupSingle(self.player_sprite)
         self.initial = ''
@@ -53,22 +88,12 @@ class Game:
         # Set up the player health
         self.health = 3
         self.health_surface = pygame.image.load("assets/heart.png").convert_alpha()
-        self.health_x_start_pos = screen_width - (self.health_surface.get_size()[0] * 3 + 620)
+        self.health_x_start_pos = screen_width - (self.health_surface.get_size()[0] * 3 + 600)
 
         # Set up the three rows
         self.toprow = screen_height - 560
         self.midrow = screen_height - 500
         self.botrow = screen_height - 440
-
-    # Sets the volume for the sounds effects
-    def volume_sfx(self, level=0.3):
-        explode_sound.set_volume(level)
-        hit_sound.set_volume(level)
-        self.player_sprite.shoot_sound.set_volume(level)
-
-    # Sets the volume for the music
-    def volume_music(self, level=0.3):
-        pass
 
     # Asteroid spawns
     def asteroid_spawn(self):
@@ -129,6 +154,7 @@ class Game:
             i_current_time = pygame.time.get_ticks()
             if i_current_time - self.iframe_time >= self.iframe_duration:
                 self.iframe = False
+                self.player_sprite.image.set_alpha(255)
 
     # Checks if the bullet collides with an enemy or player
     def collision_checks(self):
@@ -153,7 +179,9 @@ class Game:
                     self.health -= 1
                     self.iframe = True
                     self.iframe_time = pygame.time.get_ticks()
-                    pygame.mixer.Sound.play(hit_sound)
+                    if self.health != 0:
+                        pygame.mixer.Sound.play(hit_sound)
+
 
         # Check if asteroid is hit or hits player
         if self.asteroids and not self.iframe:
@@ -161,7 +189,7 @@ class Game:
                 # After a collision with the player, delete asteroid and register hit
                 if pygame.sprite.spritecollide(asteroid, self.player, False):
                     asteroid.kill()
-                    die_sprite = Boom(asteroid.rect.center, "assets/asteroid_broken.png")
+                    die_sprite = Boom(asteroid.rect.center, "assets/asteroid_broken.png", asteroid.angle)
                     self.boom.add(die_sprite)
                     self.health -= 1
                     self.iframe = True
@@ -171,13 +199,14 @@ class Game:
             for asteroid in self.asteroids:
                 if pygame.sprite.spritecollide(asteroid, self.player_sprite.bullets, True):
                     asteroid.health -= 1
+                    asteroid.orig_image = asteroid.cracked_image
                     if asteroid.health != 0:
-                        pygame.mixer.Sound.play(hit_sound)
+                        pygame.mixer.Sound.play(crack_sound)
                     if asteroid.health == 0:
                         self.score_value += 20
-                        pygame.mixer.Sound.play(explode_sound)
+                        pygame.mixer.Sound.play(break_sound)
                         asteroid.kill()
-                        die_sprite = Boom(asteroid.rect.center, "assets/asteroid_broken.png")
+                        die_sprite = Boom(asteroid.rect.center, "assets/asteroid_broken.png", asteroid.angle)
                         self.boom.add(die_sprite)
 
     # Enemy shoot
@@ -195,8 +224,8 @@ class Game:
     # Display player health
     def show_health(self):
         for heart in range(self.health):
-            x = self.health_x_start_pos + (heart * self.health_surface.get_size()[0] + 10)
-            screen.blit(self.health_surface, (x, screen_height - 60))
+            x = self.health_x_start_pos + (heart * (self.health_surface.get_size()[0] + 10))
+            screen.blit(self.health_surface, (x, screen_height - 65))
 
     # Method that runs the game
     def run(self):
@@ -238,6 +267,8 @@ class Multi:
         self.player2 = pygame.sprite.GroupSingle(self.player_2_sprite)
         self.health_p2 = 10
 
+        # Set up health
+
         # Set up the asteroids
         self.asteroids = pygame.sprite.Group()
         self.a_spawn = True
@@ -275,13 +306,13 @@ class Multi:
                 # After a collision with the player, delete asteroid and register hit
                 if pygame.sprite.spritecollide(asteroid, self.player1, False):
                     asteroid.kill()
-                    die_sprite = Boom(asteroid.rect.center, "assets/asteroid_broken.png")
+                    die_sprite = Boom(asteroid.rect.center, "assets/asteroid_broken.png", asteroid.angle)
                     self.boom.add(die_sprite)
                     self.health_p1 -= 1
                     pygame.mixer.Sound.play(hit_sound)
                 if pygame.sprite.spritecollide(asteroid, self.player2, False):
                     asteroid.kill()
-                    die_sprite = Boom(asteroid.rect.center, "assets/asteroid_broken.png")
+                    die_sprite = Boom(asteroid.rect.center, "assets/asteroid_broken.png", asteroid.angle)
                     self.boom.add(die_sprite)
                     self.health_p2 -= 1
                     pygame.mixer.Sound.play(hit_sound)
@@ -307,12 +338,16 @@ class Multi:
 
     # Display health
     def show_health(self):
-        p1health = font.render("Health: " + str(self.health_p1), True, YELLOW)
-        p1health_rect = p1health.get_rect(topleft=screen.get_rect().topleft)
-        p2health = font.render("Health: " + str(self.health_p2), True, RED)
-        p2health_rect = p2health.get_rect(topright=screen.get_rect().topright)
-        screen.blit(p1health, p1health_rect)
-        screen.blit(p2health, p2health_rect)
+        if self.health_p1 > 0:
+            p1health = pygame.image.load("assets/yellowHeart/yellowHeart" + str(self.health_p1) + ".png").convert_alpha()
+            p1health_rect = p1health.get_rect(topleft=screen.get_rect().topleft)
+            screen.blit(p1health, p1health_rect)
+        if self.health_p2 > 0:
+            p2health = pygame.image.load("assets/redHeart/redHeart" + str(self.health_p2) + ".png").convert_alpha()
+            p2health_rect = p2health.get_rect(topright=screen.get_rect().topright)
+            screen.blit(p2health, p2health_rect)
+
+
 
     def run(self):
         self.player1.sprite.yellow_bullets.draw(screen)
@@ -465,7 +500,7 @@ if __name__ == '__main__':
     FPS = 60
 
     FLASH_EVENT = pygame.USEREVENT + 3
-    pygame.time.set_timer(FLASH_EVENT, 200)
+    pygame.time.set_timer(FLASH_EVENT, 175)
 
     # Create key input variable
     keys = pygame.key.get_pressed()
@@ -497,10 +532,11 @@ if __name__ == '__main__':
     ENEMY_BULLET = pygame.USEREVENT + 2
     pygame.time.set_timer(ENEMY_BULLET, 750)
 
-    # Caption and Icon
+    # Images
     pygame.display.set_caption("Gravity Blasters")
-    icon = pygame.image.load('assets/logo.png')
+    icon = pygame.image.load('assets/planet.png')
     pygame.display.set_icon(icon)
+    explosion = pygame.image.load("assets/explosion.png").convert_alpha()
 
     # Initial state for the game
     state = 'menu'
@@ -514,7 +550,13 @@ if __name__ == '__main__':
         if state == 'menu':
             # Show main menu options
             main_menu.display_menu()
+            volume_sfx()
             mode = 'singlePlayer'
+            if play_music:
+                pygame.mixer.music.load("assets/Idle Theme.wav")
+                pygame.mixer.music.set_volume(volume_music)
+                pygame.mixer.music.play(-1)
+            play_music = False
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -522,6 +564,7 @@ if __name__ == '__main__':
                 # Check for player input at the main menu
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_DOWN:
+                        pygame.mixer.Sound.play(menu_move_down)
                         if main_menu.state == 'Singleplayer':
                             main_menu.cursor_rect.midtop = (
                                 main_menu.multiplayery, main_menu.cursor_x)
@@ -545,6 +588,7 @@ if __name__ == '__main__':
                                 main_menu.singleplayery, main_menu.cursor_x)
                             main_menu.state = 'Singleplayer'
                     elif event.key == pygame.K_UP:
+                        pygame.mixer.Sound.play(menu_move_up)
                         if main_menu.state == 'Singleplayer':
                             main_menu.cursor_rect.midtop = (main_menu.quity, main_menu.cursor_x)
                             main_menu.state = 'Quit'
@@ -567,12 +611,17 @@ if __name__ == '__main__':
                             main_menu.cursor_rect.midtop = (main_menu.creditsy, main_menu.cursor_x)
                             main_menu.state = 'Credits'
                     elif event.key == pygame.K_SPACE:
+                        pygame.mixer.Sound.play(menu_select)
                         if main_menu.state == 'Singleplayer':
                             state = 'countdown'
                             reset = True
+                            play_music = True
+                            pygame.mixer.music.stop()
                         elif main_menu.state == 'Multiplayer':
                             state = 'multiReady'
                             reset = True
+                            play_music = True
+                            pygame.mixer.music.stop()
                         elif main_menu.state == 'Leaderboards':
                             state = 'leaderboard'
                         elif main_menu.state == 'Options':
@@ -611,18 +660,21 @@ if __name__ == '__main__':
 
         if state == 'countdown':
             screen.fill(BLACK)
-            game.volume_sfx()
             for event in pygame.event.get():
                 if event.type == TIMER_EVENT:
                     counter += 1
                     if counter == 1:
                         draw_text("3", 80, screen_height / 2)
+                        pygame.mixer.Sound.play(count_sound)
                     if counter == 2:
                         draw_text("2", 80, screen_height / 2)
+                        pygame.mixer.Sound.play(count_sound)
                     if counter == 3:
                         draw_text("1", 80, screen_height / 2)
+                        pygame.mixer.Sound.play(count_sound)
                     if counter == 4:
                         draw_text("Go!", 80, screen_height / 2)
+                        pygame.mixer.Sound.play(go_sound)
                     if counter == 5:
                         counter = 0
                         state = mode
@@ -650,10 +702,13 @@ if __name__ == '__main__':
                 pygame.time.set_timer(ENEMY_BULLET, 600)
             if counter == 50:
                 pygame.time.set_timer(ENEMY_BULLET, 400)
+            if counter == 90:
+                pygame.time.set_timer(ENEMY_BULLET, 250)
             if counter >= 1:
                 game.start_delay = False
             if play_music:
                 pygame.mixer.music.load("assets/Battle Theme.wav")
+                pygame.mixer.music.set_volume(volume_music + 0.3)
                 pygame.mixer.music.play(-1)
             play_music = False
             bg.update()
@@ -665,6 +720,7 @@ if __name__ == '__main__':
                 state = 'gameOver'
                 user_text = ''
                 pygame.mixer.music.stop()
+                pygame.mixer.Sound.play(death_sound)
             pygame.display.flip()
             clock.tick(FPS)
 
@@ -676,12 +732,13 @@ if __name__ == '__main__':
                     if event.key == pygame.K_ESCAPE:
                         state = 'pause'
                         pygame.mixer.music.pause()
+                        pygame.mixer.Sound.play(pause_sound)
                 if event.type == ENEMY_BULLET:
                     game.enemy_shoot()
                 if event.type == TIMER_EVENT:
                     counter += 1
                     timer_text = font.render(str(counter), True, WHITE)
-                if event.type == FLASH_EVENT:
+                if event.type == FLASH_EVENT and game.iframe:
                     if game.flash:
                         game.player_sprite.image.set_alpha(0)
                         game.flash = False
@@ -704,8 +761,10 @@ if __name__ == '__main__':
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LSHIFT:
                         p1_ready = True
+                        pygame.mixer.Sound.play(ready_sound)
                     if event.key == pygame.K_RSHIFT:
                         p2_ready = True
+                        pygame.mixer.Sound.play(ready_sound)
                     if event.key == pygame.K_ESCAPE:
                         state = 'menu'
                         p1_ready = False
@@ -739,7 +798,13 @@ if __name__ == '__main__':
                 multi.player_1_sprite.rect.y = screen_height / 2
                 multi.player_2_sprite.rect.x = 3 * screen_width / 4
                 multi.player_2_sprite.rect.y = screen_height / 2
+                play_music = True
             reset = False
+            if play_music:
+                pygame.mixer.music.load("assets/Battle Theme.wav")
+                pygame.mixer.music.set_volume(volume_music + 0.3)
+                pygame.mixer.music.play(-1)
+            play_music = False
             bg.update()
             bg.render()
             timer_text_rect = timer_text.get_rect(midtop=screen.get_rect().midtop)
@@ -749,6 +814,8 @@ if __name__ == '__main__':
                 multi.start_delay = False
             if multi.health_p2 == 0 or multi.health_p1 == 0:
                 state = 'winner'
+                pygame.mixer.music.stop()
+                pygame.mixer.Sound.play(death_sound)
             pygame.display.flip()
             clock.tick(FPS)
 
@@ -759,6 +826,8 @@ if __name__ == '__main__':
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         state = 'pause'
+                        pygame.mixer.music.pause()
+                        pygame.mixer.Sound.play(pause_sound)
                 if event.type == TIMER_EVENT:
                     counter += 1
                     timer_text = font.render(str(counter), True, WHITE)
@@ -774,10 +843,11 @@ if __name__ == '__main__':
                     if event.key == pygame.K_SPACE:
                         state = mode
                         pygame.mixer.music.unpause()
+                        pygame.mixer.Sound.play(unpause_sound)
                     if event.key == pygame.K_ESCAPE:
                         state = 'menu'
                         counter = 0
-                        pygame.mixer.music.stop()
+                        play_music = True
 
         # Show game over message
         if state == 'gameOver':
@@ -793,7 +863,9 @@ if __name__ == '__main__':
             # set width of textfield so that text cannot get
             # outside of user's text input
             input_rect.w = max(100, text_surface.get_width() + 10)
+            screen.blit(explosion, game.player_sprite.rect.topleft)
             pygame.display.flip()
+            play_music = True
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     # Check for backspace
@@ -818,10 +890,13 @@ if __name__ == '__main__':
             if multi.health_p2 == 0:
                 draw_text("Yellow wins!", 64, (screen_height / 2) - 40, YELLOW,
                           screen_width / 2)
+                screen.blit(explosion, multi.player_2_sprite.rect.topleft)
             else:
                 draw_text("Red wins!", 64, (screen_height / 2) - 40, RED, screen_width / 2)
+                screen.blit(explosion, multi.player_1_sprite.rect.topleft)
             draw_text("Press space to play again", 40, (screen_height / 2))
             draw_text("Press esc to return to menu", 40, (screen_height / 2) + 35)
+            play_music = True
             pygame.display.flip()
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:

@@ -48,7 +48,7 @@ class Player(pygame.sprite.Sprite):
             self.red_bullets = pygame.sprite.Group()
 
         # Declare the shoot sound effect
-        self.shoot_sound = pygame.mixer.Sound("assets/shoot.wav")
+        self.shoot_sound = pygame.mixer.Sound("assets/sounds/sfx_shoot.wav")
 
     # Gets player input
     def get_input(self):
@@ -118,8 +118,8 @@ class Player(pygame.sprite.Sprite):
             self.rect.right = self.max_x_constraint
         if self.rect.bottom >= self.max_y_constraint:
             self.rect.bottom = self.max_y_constraint
-        if self.rect.top <= 40:
-            self.rect.top = 40
+        if self.rect.top <= 65:
+            self.rect.top = 65
 
     # Method that handles shooting bullets by the player
     def shoot(self):
@@ -304,10 +304,14 @@ class HardEnemy(Enemy):
 class Asteroid(pygame.sprite.Sprite):
     def __init__(self, x, y, speed, angle_change, direction=1):
         super().__init__()
+        # How many hits it takes to kill the asteroid
+        self.health = 2
+
         # Loads the asteroid image file
         self.image = pygame.image.load("assets/asteroid.png").convert_alpha()
         self.orig_image = self.image
         self.broken_image = pygame.image.load("assets/asteroid_broken.png").convert_alpha()
+        self.cracked_image = pygame.image.load("assets/asteroid_cracked.png").convert_alpha()
 
         if direction == -1:
             y = screen_height + 50
@@ -321,9 +325,6 @@ class Asteroid(pygame.sprite.Sprite):
             self.direction = 'down'
         elif direction == -1:
             self.direction = 'up'
-
-        # How many hits it takes to kill the asteroid
-        self.health = 2
 
         self.angle = 0
         self.angle_change = angle_change
@@ -355,10 +356,12 @@ class Asteroid(pygame.sprite.Sprite):
 
 # Class that handles death animations
 class Boom(pygame.sprite.Sprite):
-    def __init__(self, pos, path):
+    def __init__(self, pos, path, angle=0):
         super().__init__()
         # Loads the asteroid image file
         self.image = pygame.image.load(path).convert_alpha()
+        self.angle = angle
+        self.image = pygame.transform.rotozoom(self.image, self.angle, 1)
 
         # Gives the asteroid a rectangle collider
         self.rect = self.image.get_rect(center=pos)
