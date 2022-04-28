@@ -2,6 +2,8 @@ import pygame
 import sys
 from random import choice
 import random
+import json
+import io
 
 from models import Player, EasyEnemy, MediumEnemy, HardEnemy, EnemyBullet, Asteroid, Boom, screen_height, \
     screen_width
@@ -182,7 +184,6 @@ class Game:
                     if self.health != 0:
                         pygame.mixer.Sound.play(hit_sound)
 
-
         # Check if asteroid is hit or hits player
         if self.asteroids and not self.iframe:
             for asteroid in self.asteroids:
@@ -339,15 +340,14 @@ class Multi:
     # Display health
     def show_health(self):
         if self.health_p1 > 0:
-            p1health = pygame.image.load("assets/yellowHeart/yellowHeart" + str(self.health_p1) + ".png").convert_alpha()
+            p1health = pygame.image.load(
+                "assets/yellowHeart/yellowHeart" + str(self.health_p1) + ".png").convert_alpha()
             p1health_rect = p1health.get_rect(topleft=screen.get_rect().topleft)
             screen.blit(p1health, p1health_rect)
         if self.health_p2 > 0:
             p2health = pygame.image.load("assets/redHeart/redHeart" + str(self.health_p2) + ".png").convert_alpha()
             p2health_rect = p2health.get_rect(topright=screen.get_rect().topright)
             screen.blit(p2health, p2health_rect)
-
-
 
     def run(self):
         self.player1.sprite.yellow_bullets.draw(screen)
@@ -420,6 +420,8 @@ class MainMenu(Menu):
 
     def display_menu(self):
         screen.fill(BLACK)
+        bg.update()
+        bg.render()
         draw_text('Gravity Blasters', 50, screen_height / 2 - 40)
         draw_text("Singleplayer", 20, self.singleplayery)
         draw_text("Multiplayer", 20, self.multiplayery)
@@ -438,10 +440,67 @@ class Leaderboard(Menu):
 
     def display_menu(self):
         screen.fill(BLACK)
-        draw_text('Leaderboard', 20, screen_height / 2 - 20)
-        draw_text('Top Scores:', 15, screen_height / 2 + 10)
-        draw_text(str(game.initial) + "........." + str(game.hs), 22,
+        bg.update()
+        bg.render()
+        f = open('highscores.txt', 'r')  # opens the file in read mode
+        data = f.readlines()  # reads all the lines in as a list
+        currentTop = int(data[0])  # gets the first line of the file
+        second = int(data[1])
+        third = int(data[2])
+        fourth = int(data[3])
+        fifth = int(data[4])
+        f.close()
+
+        draw_text('Leaderboard', 30, screen_height / 2 - 20)
+        draw_text('Top Scores:', 20, screen_height / 2 + 10)
+        draw_text("#1" + "........" + str(currentTop), 30,
                   screen_height / 2 + 45)
+        draw_text("#2" + "........." + str(second), 28,
+                  screen_height / 2 + 65)
+        draw_text("#3" + "........." + str(third), 26,
+                  screen_height / 2 + 85)
+        draw_text("#4" + "........." + str(fourth), 24,
+                  screen_height / 2 + 105)
+        draw_text("#5" + "........." + str(fifth), 22,
+                  screen_height / 2 + 125)
+
+        blit_screen()
+
+
+class OptionsMenu(Menu):
+    def __init__(self):
+        Menu.__init__(self)
+
+    def display_menu(self):
+        screen.fill(BLACK)
+        bg.update()
+        bg.render()
+        draw_text('Options', 25, self.mid_h - 30, WHITE, self.mid_w - 10)
+        draw_text("Controls", 20, self.mid_h + 20, WHITE, self.mid_w - 10)
+        draw_text('>', 15, self.mid_h + 20, WHITE, self.mid_w - 60)
+        self.draw_cursor()
+        blit_screen()
+
+
+class ControlsMenu(Menu):
+    def __init__(self):
+        Menu.__init__(self)
+
+    def display_menu(self):
+        screen.fill(BLACK)
+        bg.update()
+        bg.render()
+        p1ctrls = pygame.image.load('assets/p1controls.png')
+        p2ctrls = pygame.image.load('assets/p2controls.png')
+        DEFAULT_IMAGE_SIZE = (110, 140)
+        DEFAULT_IMAGE_SIZE2 = (170, 170)
+        p1ctrlfinal = pygame.transform.scale(p1ctrls, DEFAULT_IMAGE_SIZE)
+        p2ctrlfinal = pygame.transform.scale(p2ctrls, DEFAULT_IMAGE_SIZE2)
+        draw_text("Controls", 30, screen_height / 2 - 25)
+        draw_text('Player 1 ', 25, self.mid_h + 10, WHITE, self.mid_w - 150)
+        draw_text("Player 2", 25, self.mid_h + 10, WHITE, self.mid_w + 150)
+        screen.blit(p2ctrlfinal, (self.mid_w - 230, self.mid_h + 10))
+        screen.blit(p1ctrlfinal, (self.mid_w + 90, self.mid_h + 24))
         blit_screen()
 
 
@@ -451,10 +510,71 @@ class CreditsMenu(Menu):
 
     def display_menu(self):
         screen.fill(BLACK)
-        draw_text('Credits', 20, screen_height / 2 - 20)
-        draw_text('Made by Phil,  Luis,  Rutva,  and Yessenia', 15,
+        bg.update()
+        bg.render()
+        draw_text('Credits', 40, screen_height / 2 - 20)
+        draw_text('Made by Phil,  Luis,  Rutva,  and Yessenia', 30,
                   screen_height / 2 + 10)
         blit_screen()
+
+
+def readTopScore():
+    f = open('highscores.txt', 'r')  # opens the file in read mode
+    data = f.readlines()  # reads all the lines in as a list
+    currentTop = int(data[0])  # gets the first line of the file
+    f.close()
+    return currentTop
+
+
+def replace_line(file_name, line_num, text):
+    lines = open(file_name, 'r').readlines()
+    lines[line_num] = text
+    out = open(file_name, 'w')
+    out.writelines(lines)
+    out.close()
+
+
+def updateFile():
+    f = open('highscores.txt', 'r')  # opens the file in read mode
+    data = f.readlines()  # reads all the lines in as a list
+    currentTop = int(data[0])  # gets the first line of the file
+    second = int(data[1])
+    third = int(data[2])
+    fourth = int(data[3])
+    fifth = int(data[4])
+    f.close()
+
+    if currentTop < game.score_value:
+        # sees if the current score is greater than the previous best
+        replace_line('highscores.txt', 0, str(game.score_value) + '\n')
+        replace_line('highscores.txt', 1, str(currentTop) + '\n')
+        replace_line('highscores.txt', 2, str(second) + '\n')
+        replace_line('highscores.txt', 3, str(third) + '\n')
+        replace_line('highscores.txt', 4, str(fourth) + '\n')
+
+    elif second < game.score_value < currentTop:
+        # sees if the current score is greater than the previous best
+        replace_line('highscores.txt', 1, str(game.score_value) + '\n')
+        replace_line('highscores.txt', 2, str(second) + '\n')
+        replace_line('highscores.txt', 3, str(third) + '\n')
+        replace_line('highscores.txt', 4, str(fourth) + '\n')
+
+    elif third < game.score_value < second:
+        # sees if the current score is greater than the previous best
+        replace_line('highscores.txt', 2, str(game.score_value) + '\n')
+        replace_line('highscores.txt', 3, str(third) + '\n')
+        replace_line('highscores.txt', 4, str(fourth) + '\n')
+
+    elif fourth < game.score_value < third:
+        # sees if the current score is greater than the previous best
+        replace_line('highscores.txt', 3, str(game.score_value) + '\n')
+        replace_line('highscores.txt', 4, str(fourth) + '\n')
+
+    elif fifth < game.score_value < fourth:
+        # sees if the current score is greater than the previous best
+        replace_line('highscores.txt', 4, str(game.score_value) + '\n')
+
+    return currentTop
 
 
 # Draw text on the screen
@@ -489,7 +609,6 @@ if __name__ == '__main__':
     WHITE = (255, 255, 255)
     YELLOW = (255, 255, 0)
     RED = (255, 20, 20)
-    LIGHTBLUE = (173, 216, 230)
 
     # Create the variables for the game clock/timer
     clock = pygame.time.Clock()
@@ -520,6 +639,8 @@ if __name__ == '__main__':
     main_menu = MainMenu()
     leaderboard = Leaderboard()
     credits_menu = CreditsMenu()
+    options_menu = OptionsMenu()
+    control_menu = ControlsMenu()
 
     # Set up the music
     play_music = True
@@ -532,6 +653,8 @@ if __name__ == '__main__':
     ENEMY_BULLET = pygame.USEREVENT + 2
     pygame.time.set_timer(ENEMY_BULLET, 750)
 
+    # set HighScore
+    topscore = int(readTopScore())
     # Images
     pygame.display.set_caption("Gravity Blasters")
     icon = pygame.image.load('assets/planet.png')
@@ -616,12 +739,10 @@ if __name__ == '__main__':
                             state = 'countdown'
                             reset = True
                             play_music = True
-                            pygame.mixer.music.stop()
                         elif main_menu.state == 'Multiplayer':
                             state = 'multiReady'
                             reset = True
                             play_music = True
-                            pygame.mixer.music.stop()
                         elif main_menu.state == 'Leaderboards':
                             state = 'leaderboard'
                         elif main_menu.state == 'Options':
@@ -644,6 +765,32 @@ if __name__ == '__main__':
                         state = 'menu'
                     if event.key == pygame.K_SPACE:
                         state = 'menu'
+
+        if state == 'options':
+            options_menu.display_menu()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        state = 'menu'
+                    if event.key == pygame.K_SPACE:
+                        state = 'controls'
+                    if event.key == pygame.K_KP_ENTER:
+                        state = 'controls'
+
+        if state == 'controls':
+            control_menu.display_menu()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        state = 'options'
+                    if event.key == pygame.K_SPACE:
+                        state = 'options'
 
         if state == 'credits':
             credits_menu.display_menu()
@@ -676,8 +823,10 @@ if __name__ == '__main__':
                         draw_text("Go!", 80, screen_height / 2)
                         pygame.mixer.Sound.play(go_sound)
                     if counter == 5:
+                        pygame.mixer.music.stop()
                         counter = 0
                         state = mode
+
                     pygame.display.flip()
 
         if state == 'singlePlayer':
@@ -723,7 +872,6 @@ if __name__ == '__main__':
                 pygame.mixer.Sound.play(death_sound)
             pygame.display.flip()
             clock.tick(FPS)
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -748,6 +896,8 @@ if __name__ == '__main__':
 
         if state == 'multiReady':
             screen.fill(BLACK)
+            bg.update()
+            bg.render()
             draw_text('Ready?', 60, screen_height / 2 - 200)
             draw_text("Player 1", 40, screen_height / 2 - 50, WHITE, screen_width / 2 - 200)
             draw_text("press Left Shift", 40, screen_height / 2 - 20, WHITE, screen_width / 2 - 200)
@@ -839,6 +989,9 @@ if __name__ == '__main__':
             draw_text("Press escape to return to main menu", 40, (screen_height / 2) + 35)
             pygame.display.flip()
             for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         state = mode
@@ -851,37 +1004,26 @@ if __name__ == '__main__':
 
         # Show game over message
         if state == 'gameOver':
-            # Print the value of the score when the game ends
-            draw_text("Game Over! Score: " + str(game.score_value), 64, (screen_height / 2) - 40, WHITE,
-                      screen_width / 2)
-            draw_text("Enter your initials below:", 40, (screen_height / 2))
-            #draw_text("Press esc to return to menu", 40, (screen_height / 2) + 35)
-            pygame.draw.rect(screen, BLACK, input_rect)
-            text_surface = font.render(user_text, True, (255, 255, 255))
-            # render at position stated in arguments
-            screen.blit(text_surface, (input_rect.x + 5, input_rect.y + 5))
-            # set width of textfield so that text cannot get
-            # outside of user's text input
-            input_rect.w = max(100, text_surface.get_width() + 10)
-            screen.blit(explosion, game.player_sprite.rect.topleft)
+            if game.score_value > topscore:
+                draw_text("Game Over!", 60, (screen_height / 2) - 40, WHITE, screen_width / 2)
+                draw_text("New HighScore: " + str(game.score_value), 64, (screen_height / 2) + 25, WHITE,
+                          screen_width / 2)
+                draw_text("Press esc to return to menu", 40, (screen_height / 2) + 60)
+                updateFile()
+                topscore = game.score_value
+            if game.score_value < topscore:
+                draw_text("Game Over!", 64, (screen_height / 2) - 40, WHITE, screen_width / 2)
+                draw_text("Your Score: " + str(game.score_value), 60, (screen_height / 2) + 25, WHITE, screen_width / 2)
+                draw_text("Press esc to return to menu", 40, (screen_height / 2) + 60)
+                updateFile()
             pygame.display.flip()
+            screen.blit(explosion, game.player_sprite.rect.topleft)
             play_music = True
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
-                    # Check for backspace
-                    if event.key == pygame.K_BACKSPACE:
-
-                        # get text input from 0 to -1 i.e. end.
-                        user_text = user_text[:-1]
-                    # Unicode standard is used for string
-                    # formation
-                    else:
-                        if len(user_text) <= 2:
-                            user_text += event.unicode
                     if event.key == pygame.K_ESCAPE:
                         state = 'menu'
                         counter = 0
-
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
